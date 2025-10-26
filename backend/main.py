@@ -227,7 +227,8 @@ def handle_matchmaking():
             'status': 'playing',
             'pot': 0,
             'max_bet': 0,
-            'deck': deck
+            'deck': deck,
+            'both_acted': False
         }
         
         # Update player game_id
@@ -317,18 +318,32 @@ def handle_bet(data):
             emit('error', {'error': 'Cannot check - need to call'})
             return
     
-    # Check if both players have matched bets (round is complete)
+    # Check if both players have matched bets
     bets_equal = (game['bets'][game['players'][0]] == game['bets'][game['players'][1]])
     
-    # Simple logic: if bets are equal after a call or check, round is over
-    # For raise, switch turn so other player can respond
+    # Simple rule: betting round ends when bets are equal and it's NOT a raise
+    # AND both players have had a chance to act at least once
     round_over = False
     
-    if action in ['call', 'check']:
-        # After calling or checking with equal bets, round is complete
-        round_over = bets_equal
-    elif action == 'raise':
-        # After raising, switch turn so opponent can respond
+    if action == 'raise':
+        # Round continues after a raise (opponent must respond)
+        round_over = False
+        game['waiting_for_raise_response'] = True  # Opponent needs to respond to the raise
+    elif bets_equal:
+        # Bets are equal - check if round should end
+        if game.get('waiting_for_raise_response', False):
+            # Someone just responded to a raise - round is over
+            round_over = True
+            game['waiting_for_raise_response'] = False
+        elif not game.get('both_acted', False):
+            # First time bets became equal - need both to confirm
+            game['both_acted'] = True
+            round_over = False
+        else:
+            # Both have acted and now matching again - round over!
+            round_over = True
+    else:
+        # Bets not equal yet - round continues
         round_over = False
     
     if not round_over:
