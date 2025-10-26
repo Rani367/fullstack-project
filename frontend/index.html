@@ -3,17 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello World App</title>
+    <title>Multiplayer Tic Tac Toe</title>
     <link rel="stylesheet" href="/styles.css">
+    <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1 id="greeting">Hello World!</h1>
-        <p class="subtitle">Welcome to my fullstack app</p>
-        <button id="clickMe" class="btn">Click Me</button>
-        <p id="counter">Clicks: 0</p>
+        <!-- Login Screen -->
+        <div id="loginScreen" class="screen">
+            <h1>Multiplayer Tic Tac Toe</h1>
+            <p class="subtitle">Enter your name to start playing</p>
+            <div class="input-group">
+                <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
+                <button id="enterGame" class="btn">Enter Game</button>
+            </div>
+            <p id="errorMessage" class="error-message"></p>
+        </div>
+
+        <!-- Waiting Screen -->
+        <div id="waitingScreen" class="screen hidden">
+            <h1>Looking for an opponent...</h1>
+            <div class="loader"></div>
+            <p id="waitingMessage">Please wait while we find you an opponent</p>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="gameScreen" class="screen hidden">
+            <h1>Tic Tac Toe</h1>
+            <div id="playerInfo" class="player-info">
+                <div class="player">
+                    <span id="player1Name"></span> <span id="player1Symbol"></span>
+                </div>
+                <div class="vs">VS</div>
+                <div class="player">
+                    <span id="player2Name"></span> <span id="player2Symbol"></span>
+                </div>
+            </div>
+            <div id="turnIndicator" class="turn-indicator"></div>
+            <div id="gameBoard" class="game-board"></div>
+            <div id="gameStatus" class="game-status"></div>
+            <button id="playAgain" class="btn hidden">Play Again</button>
+        </div>
     </div>
     <script src="/app.js"></script>
 </body>
 </html>
-    
