@@ -17,7 +17,7 @@ import Logo from "/assets/images/fastapi-logo.svg"
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
-}) as any
+})
 
 function LandingPage() {
   const loggedIn = isLoggedIn()

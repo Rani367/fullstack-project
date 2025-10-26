@@ -5,7 +5,7 @@ import useAuth from "@/hooks/useAuth"
 
 export const Route = createFileRoute("/_layout/dashboard")({
   component: Dashboard,
-}) as any
+})
 
 function Dashboard() {
   const { user: currentUser } = useAuth()
