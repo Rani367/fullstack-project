@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multiplayer Tic Tac Toe</title>
+    <title>Multiplayer Poker</title>
     <link rel="stylesheet" href="/styles.css">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
@@ -11,7 +11,7 @@
     <div class="container">
         <!-- Login Screen -->
         <div id="loginScreen" class="screen">
-            <h1>Multiplayer Tic Tac Toe</h1>
+            <h1>Multiplayer Poker</h1>
             <p class="subtitle">Enter your name to start playing</p>
             <div class="input-group">
                 <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
@@ -29,20 +29,53 @@
 
         <!-- Game Screen -->
         <div id="gameScreen" class="screen hidden">
-            <h1>Tic Tac Toe</h1>
-            <div id="playerInfo" class="player-info">
-                <div class="player">
-                    <span id="player1Name"></span> <span id="player1Symbol"></span>
+            <div class="poker-table">
+                <h1>Texas Hold'em Poker</h1>
+                
+                <!-- Opponent Area -->
+                <div id="opponentArea" class="player-area">
+                    <div id="opponentInfo" class="player-info-compact">
+                        <span id="player2Name"></span>
+                        <span class="bet-amount" id="player2Bet">$0</span>
+                    </div>
+                    <div id="opponentCards" class="cards-container"></div>
                 </div>
-                <div class="vs">VS</div>
-                <div class="player">
-                    <span id="player2Name"></span> <span id="player2Symbol"></span>
+                
+                <!-- Community Cards -->
+                <div id="communityCards" class="community-cards">
+                    <h3>Community Cards</h3>
+                    <div id="communityCardsDisplay" class="cards-container"></div>
                 </div>
+                
+                <!-- Your Area -->
+                <div id="myArea" class="player-area">
+                    <div id="myCards" class="cards-container"></div>
+                    <div id="myInfo" class="player-info-compact">
+                        <span id="player1Name"></span>
+                        <span class="bet-amount" id="myBet">$0</span>
+                    </div>
+                </div>
+                
+                <!-- Pot Display -->
+                <div id="potDisplay" class="pot-display">
+                    <span>Pot: $<span id="potAmount">0</span></span>
+                </div>
+                
+                <!-- Turn Indicator -->
+                <div id="turnIndicator" class="turn-indicator"></div>
+                
+                <!-- Action Buttons -->
+                <div id="actionButtons" class="action-buttons">
+                    <button id="foldBtn" class="btn-action btn-fold">Fold</button>
+                    <button id="checkBtn" class="btn-action btn-check">Check</button>
+                    <button id="callBtn" class="btn-action btn-call">Call</button>
+                    <button id="raiseBtn" class="btn-action btn-raise">Raise</button>
+                </div>
+                
+                <!-- Game Status -->
+                <div id="gameStatus" class="game-status"></div>
+                <button id="playAgain" class="btn hidden">Play Again</button>
             </div>
-            <div id="turnIndicator" class="turn-indicator"></div>
-            <div id="gameBoard" class="game-board"></div>
-            <div id="gameStatus" class="game-status"></div>
-            <button id="playAgain" class="btn hidden">Play Again</button>
         </div>
     </div>
     <script src="/app.js"></script>

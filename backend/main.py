@@ -17,10 +17,82 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # Generate a version for cache busting
 VERSION = os.environ.get('RAILWAY_DEPLOYMENT_ID', str(int(time.time())))
 
+# Poker card utilities
+SUITS = ['hearts', 'diamonds', 'clubs', 'spades']
+RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
+
+def create_deck():
+    """Create a deck of 52 cards"""
+    return [{'suit': suit, 'rank': rank, 'sprite': f"{rank}_{suit}"} 
+            for suit in SUITS for rank in RANKS]
+
+def shuffle_deck(deck):
+    """Shuffle the deck"""
+    random.shuffle(deck)
+    return deck
+
+def get_card_value(card):
+    """Get numeric value for a card"""
+    rank = card['rank']
+    if rank == 'A':
+        return 14
+    elif rank == 'K':
+        return 13
+    elif rank == 'Q':
+        return 12
+    elif rank == 'J':
+        return 11
+    else:
+        return int(rank)
+
+def evaluate_hand(cards):
+    """Evaluate poker hand (simplified - just returns high card for now)"""
+    values = sorted([get_card_value(c) for c in cards], reverse=True)
+    suits = [c['suit'] for c in cards]
+    ranks = [c['rank'] for c in cards]
+    
+    # Check for flush (all same suit)
+    is_flush = len(set(suits)) == 1
+    
+    # Check for straight
+    is_straight = False
+    value_counts = {v: values.count(v) for v in values}
+    
+    # Check for pairs, three of a kind, four of a kind
+    pairs = [v for v, count in value_counts.items() if count == 2]
+    three_kind = [v for v, count in value_counts.items() if count == 3]
+    four_kind = [v for v, count in value_counts.items() if count == 4]
+    
+    hand_strength = "high_card"
+    score = 0
+    
+    if four_kind:
+        hand_strength = "four_of_a_kind"
+        score = 1000000 + four_kind[0] * 100
+    elif three_kind and pairs:
+        hand_strength = "full_house"
+        score = 900000 + three_kind[0] * 100 + pairs[0]
+    elif is_flush:
+        hand_strength = "flush"
+        score = 800000 + max(values)
+    elif len(pairs) == 2:
+        hand_strength = "two_pair"
+        score = 700000 + max(pairs) * 100 + min(pairs)
+    elif len(three_kind) == 1:
+        hand_strength = "three_of_a_kind"
+        score = 600000 + three_kind[0] * 100
+    elif len(pairs) == 1:
+        hand_strength = "pair"
+        score = 500000 + pairs[0] * 100
+    else:
+        score = 100000 + max(values)
+    
+    return {'hand_strength': hand_strength, 'score': score}
+
 # Game state management
 players = {}  # {socket_id: {'name': str, 'game_id': str}}
 waiting_players = []  # List of waiting socket_ids
-games = {}  # {game_id: {'players': [socket_id1, socket_id2], 'board': [], 'turn': socket_id, 'status': 'waiting'|'playing'|'finished'}}
+games = {}  # {game_id: {'players': [socket_id1, socket_id2], 'cards': {}, 'bets': {}, 'turn': socket_id, 'status': 'waiting'|'playing'|'finished', 'pot': 0}}
 
 @app.template_global()
 def get_version():
@@ -137,36 +209,50 @@ def handle_matchmaking():
         player1_id = waiting_players.pop(0)
         player2_id = waiting_players.pop(0)
         
-        # Create game
+        # Create game with poker state
         game_id = f"game_{random.randint(1000, 9999)}"
+        deck = shuffle_deck(create_deck())
+        
+        # Deal 2 cards to each player
+        player1_cards = deck[:2]
+        player2_cards = deck[2:4]
+        community_cards = deck[4:9]  # 5 community cards
+        
         games[game_id] = {
             'players': [player1_id, player2_id],
-            'board': [''] * 9,
-            'turn': player1_id,  # Randomly choose first player
-            'status': 'playing'
+            'cards': {player1_id: player1_cards, player2_id: player2_cards},
+            'community_cards': community_cards,
+            'bets': {player1_id: 0, player2_id: 0},
+            'turn': random.choice([player1_id, player2_id]),  # Random first turn
+            'status': 'playing',
+            'pot': 0,
+            'max_bet': 0,
+            'deck': deck
         }
         
         # Update player game_id
         players[player1_id]['game_id'] = game_id
         players[player2_id]['game_id'] = game_id
         
-        # Notify both players
+        # Notify both players of game start
         socketio.emit('game_start', {
             'game_id': game_id,
             'players': [players[player1_id]['name'], players[player2_id]['name']],
-            'your_symbol': 'X',
-            'turn': players[games[game_id]['turn']]['name']
+            'my_cards': player1_cards,
+            'turn': players[games[game_id]['turn']]['name'],
+            'pot': 0
         }, room=player1_id)
         
         socketio.emit('game_start', {
             'game_id': game_id,
             'players': [players[player1_id]['name'], players[player2_id]['name']],
-            'your_symbol': 'O',
-            'turn': players[games[game_id]['turn']]['name']
+            'my_cards': player2_cards,
+            'turn': players[games[game_id]['turn']]['name'],
+            'pot': 0
         }, room=player2_id)
 
-@socketio.on('make_move')
-def handle_make_move(data):
+@socketio.on('bet')
+def handle_bet(data):
     socket_id = request.sid
     
     if socket_id not in players or not players[socket_id].get('game_id'):
@@ -189,68 +275,137 @@ def handle_make_move(data):
         emit('error', {'error': 'Not your turn'})
         return
     
-    index = data.get('index')
+    action = data.get('action')
+    bet_amount = data.get('amount', 0)
     
-    if index is None or index < 0 or index > 8:
-        emit('error', {'error': 'Invalid move'})
-        return
-    
-    if game['board'][index]:
-        emit('error', {'error': 'Spot already taken'})
-        return
-    
-    # Make the move
-    symbol = 'X' if socket_id == game['players'][0] else 'O'
-    game['board'][index] = symbol
-    
-    # Check for win
-    winner = check_winner(game['board'])
-    
-    if winner:
+    if action == 'fold':
+        # Player folds, opponent wins
+        opponent_id = game['players'][1] if game['turn'] == game['players'][0] else game['players'][0]
         game['status'] = 'finished'
-        winner_socket = game['players'][0] if winner == 'X' else game['players'][1]
         
-        # Notify both players
         for player_id in game['players']:
+            is_winner = (player_id == opponent_id)
             socketio.emit('game_over', {
-                'winner': players[winner_socket]['name'],
-                'board': game['board'],
-                'reason': 'win'
+                'winner': players[opponent_id]['name'],
+                'winner_socket': opponent_id,
+                'reason': 'fold',
+                'community_cards': game['community_cards'],
+                'pot': game['pot'],
+                'is_winner': is_winner
             }, room=player_id)
-    elif all(cell for cell in game['board']):  # Check for tie
-        game['status'] = 'finished'
-        # Notify both players
-        for player_id in game['players']:
-            socketio.emit('game_over', {
-                'winner': None,
-                'board': game['board'],
-                'reason': 'tie'
-            }, room=player_id)
-    else:
-        # Switch turn
+        return
+    
+    elif action == 'call':
+        # Player calls (matches current bet)
+        current_bet = game['max_bet'] - game['bets'][socket_id]
+        if current_bet > 0:
+            game['bets'][socket_id] += current_bet
+            game['pot'] += current_bet
+    elif action == 'raise':
+        # Player raises
+        current_total = game['bets'][socket_id]
+        additional = bet_amount - current_total
+        if additional <= 0:
+            emit('error', {'error': 'Invalid bet amount'})
+            return
+        game['bets'][socket_id] = bet_amount
+        game['max_bet'] = max(game['max_bet'], bet_amount)
+        game['pot'] += additional
+    elif action == 'check':
+        # Player checks (can only check if no bet)
+        if game['max_bet'] > game['bets'][socket_id]:
+            emit('error', {'error': 'Cannot check - need to call'})
+            return
+    
+    # Check if both players have matched bets (round is complete)
+    bets_equal = (game['bets'][game['players'][0]] == game['bets'][game['players'][1]])
+    
+    # Simple logic: if bets are equal after a call or check, round is over
+    # For raise, switch turn so other player can respond
+    round_over = False
+    
+    if action in ['call', 'check']:
+        # After calling or checking with equal bets, round is complete
+        round_over = bets_equal
+    elif action == 'raise':
+        # After raising, switch turn so opponent can respond
+        round_over = False
+    
+    if not round_over:
+        # Switch turn if not everyone has acted yet
         game['turn'] = game['players'][1] if game['turn'] == game['players'][0] else game['players'][0]
-        
-        # Notify both players of the move
-        for player_id in game['players']:
-            socketio.emit('move_made', {
-                'index': index,
-                'symbol': symbol,
-                'board': game['board'],
-                'next_turn': players[game['turn']]['name']
-            }, room=player_id)
-
-def check_winner(board):
-    """Check if there's a winner"""
-    winning_combinations = [
-        [0, 1, 2], [3, 4, 5], [6, 7, 8],  # rows
-        [0, 3, 6], [1, 4, 7], [2, 5, 8],  # columns
-        [0, 4, 8], [2, 4, 6]              # diagonals
-    ]
     
-    for combo in winning_combinations:
-        if board[combo[0]] and board[combo[0]] == board[combo[1]] == board[combo[2]]:
-            return board[combo[0]]
-    return None
+    # Notify both players
+    for player_id in game['players']:
+        socketio.emit('bet_made', {
+            'action': action,
+            'player': players[socket_id]['name'],
+            'pot': game['pot'],
+            'bets': {players[pid]['name']: game['bets'][pid] for pid in game['players']},
+            'next_turn': players[game['turn']]['name'] if game['turn'] and not round_over else None,
+            'round_over': round_over
+        }, room=player_id)
+    
+    # If round is over, show community cards and determine winner
+    if round_over:
+        determine_poker_winner(game_id)
+
+def determine_poker_winner(game_id):
+    """Determine the winner of a poker hand"""
+    game = games[game_id]
+    
+    if game['status'] != 'playing':
+        return
+    
+    # Get all cards for each player (their 2 cards + 5 community cards)
+    player1_id = game['players'][0]
+    player2_id = game['players'][1]
+    
+    player1_hand = game['cards'][player1_id] + game['community_cards']
+    player2_hand = game['cards'][player2_id] + game['community_cards']
+    
+    # Evaluate hands
+    player1_eval = evaluate_hand(player1_hand)
+    player2_eval = evaluate_hand(player2_hand)
+    
+    # Determine winner
+    if player1_eval['score'] > player2_eval['score']:
+        winner_id = player1_id
+        winner_eval = player1_eval
+        loser_eval = player2_eval
+    elif player2_eval['score'] > player1_eval['score']:
+        winner_id = player2_id
+        winner_eval = player2_eval
+        loser_eval = player1_eval
+    else:
+        # Tie - split pot
+        winner_id = None
+        winner_eval = player1_eval
+        loser_eval = player2_eval
+    
+    game['status'] = 'finished'
+    
+    # Notify both players
+    for player_id in game['players']:
+        is_winner = (player_id == winner_id) if winner_id else False
+        
+        # Get the appropriate hand eval
+        if player_id == player1_id:
+            my_eval = player1_eval
+        else:
+            my_eval = player2_eval
+        
+        socketio.emit('game_over', {
+            'winner': players[winner_id]['name'] if winner_id else None,
+            'winner_socket': winner_id,
+            'reason': 'showdown',
+            'community_cards': game['community_cards'],
+            'my_cards': game['cards'][player_id],
+            'opponent_cards': game['cards'][player2_id] if player_id == player1_id else game['cards'][player1_id],
+            'my_hand': my_eval,
+            'pot': game['pot'],
+            'is_winner': is_winner
+        }, room=player_id)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
