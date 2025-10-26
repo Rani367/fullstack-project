@@ -6,11 +6,10 @@ import {
   Heading,
   Image,
   Link,
-  Stack,
   Text,
   VStack,
 } from "@chakra-ui/react"
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, Link as RouterLink } from "@tanstack/react-router"
 import { FiArrowRight, FiCheck, FiZap } from "react-icons/fi"
 
 import { isLoggedIn } from "@/hooks/useAuth"
@@ -18,7 +17,7 @@ import Logo from "/assets/images/fastapi-logo.svg"
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
-})
+}) as any
 
 function LandingPage() {
   const loggedIn = isLoggedIn()
@@ -39,39 +38,39 @@ function LandingPage() {
         borderColor="border.emphasized"
       >
         <Image src={Logo} alt="Logo" maxW="2xs" />
-        <Stack direction="row" spacing={4}>
+        <Flex gap={4}>
           {loggedIn ? (
-            <Button
-              as={Link}
-              href="/dashboard"
-              rightIcon={<FiArrowRight />}
-              variant="solid"
-              size="md"
-            >
-              Go to Dashboard
-            </Button>
-          ) : (
-            <>
-              <Button as={Link} href="/login" variant="ghost" size="md">
-                Log In
-              </Button>
+            <RouterLink to="/dashboard">
               <Button
-                as={Link}
-                href="/signup"
+                rightIcon={<FiArrowRight />}
                 variant="solid"
                 size="md"
-                rightIcon={<FiArrowRight />}
               >
-                Get Started
+                Go to Dashboard
               </Button>
+            </RouterLink>
+          ) : (
+            <>
+              <RouterLink to="/login">
+                <Button variant="ghost" size="md">Log In</Button>
+              </RouterLink>
+              <RouterLink to="/signup">
+                <Button
+                  variant="solid"
+                  size="md"
+                  rightIcon={<FiArrowRight />}
+                >
+                  Get Started
+                </Button>
+              </RouterLink>
             </>
           )}
-        </Stack>
+        </Flex>
       </Flex>
 
       {/* Hero Section */}
       <Container maxW="container.xl" py={20}>
-        <VStack spacing={8} textAlign="center">
+        <VStack gap={8} textAlign="center">
           <Heading as="h1" size="3xl" lineHeight="1.2">
             Welcome to Our Platform
           </Heading>
@@ -81,20 +80,20 @@ function LandingPage() {
             and Python combined.
           </Text>
           {!loggedIn && (
-            <Stack direction="row" spacing={4} pt={4}>
-              <Button
-                as={Link}
-                href="/signup"
-                size="lg"
-                variant="solid"
-                rightIcon={<FiArrowRight />}
-              >
-                Get Started
-              </Button>
-              <Button as={Link} href="/login" size="lg" variant="outline">
-                Sign In
-              </Button>
-            </Stack>
+            <Flex direction="row" gap={4} pt={4}>
+              <RouterLink to="/signup">
+                <Button
+                  size="lg"
+                  variant="solid"
+                  rightIcon={<FiArrowRight />}
+                >
+                  Get Started
+                </Button>
+              </RouterLink>
+              <RouterLink to="/login">
+                <Button size="lg" variant="outline">Sign In</Button>
+              </RouterLink>
+            </Flex>
           )}
         </VStack>
       </Container>
@@ -136,7 +135,7 @@ function LandingPage() {
             border="1px solid"
             borderColor="border.emphasized"
           >
-            <VStack spacing={6}>
+            <VStack gap={6}>
               <Heading as="h2" size="xl">
                 Ready to Get Started?
               </Heading>
@@ -144,20 +143,22 @@ function LandingPage() {
                 Join thousands of users who are already managing their data with
                 our platform.
               </Text>
-              <Stack direction="row" spacing={4} pt={4}>
-                <Button
-                  as={Link}
-                  href="/signup"
-                  size="lg"
-                  variant="solid"
-                  rightIcon={<FiArrowRight />}
-                >
-                  Create Account
-                </Button>
-                <Button as={Link} href="/login" size="lg" variant="ghost">
-                  I already have an account
-                </Button>
-              </Stack>
+              <Flex direction="row" gap={4} pt={4}>
+                <RouterLink to="/signup">
+                  <Button
+                    size="lg"
+                    variant="solid"
+                    rightIcon={<FiArrowRight />}
+                  >
+                    Create Account
+                  </Button>
+                </RouterLink>
+                <RouterLink to="/login">
+                  <Button size="lg" variant="ghost">
+                    I already have an account
+                  </Button>
+                </RouterLink>
+              </Flex>
             </VStack>
           </Box>
         </Container>
@@ -168,14 +169,18 @@ function LandingPage() {
         <Container maxW="container.xl">
           <Flex justify="space-between" align="center">
             <Text color="fg.muted">© 2024 Full Stack FastAPI Project</Text>
-            <Stack direction="row" spacing={6}>
-              <Link href="/login" color="fg.muted" _hover={{ color: "fg" }}>
-                Terms
-              </Link>
-              <Link href="/login" color="fg.muted" _hover={{ color: "fg" }}>
-                Privacy
-              </Link>
-            </Stack>
+            <Flex direction="row" gap={6}>
+              <RouterLink to="/login">
+                <Link color="fg.muted" _hover={{ color: "fg" }}>
+                  Terms
+                </Link>
+              </RouterLink>
+              <RouterLink to="/login">
+                <Link color="fg.muted" _hover={{ color: "fg" }}>
+                  Privacy
+                </Link>
+              </RouterLink>
+            </Flex>
           </Flex>
         </Container>
       </Box>
@@ -186,7 +191,7 @@ function LandingPage() {
 function FeatureBox({ icon: Icon, title, description }: any) {
   return (
     <Box flex="1" p={8} bg="bg.canvas" borderRadius="xl" border="1px solid" borderColor="border.emphasized">
-      <VStack spacing={4} align="start">
+      <VStack gap={4} align="start">
         <Box
           p={3}
           bg="bg.muted"

@@ -31,7 +31,7 @@ const SidebarItems = ({ onClose }: SidebarItemsProps) => {
     : items
 
   const listItems = finalItems.map(({ icon, title, path }) => (
-    <RouterLink key={title} to={path} onClick={onClose}>
+    <RouterLink key={title} to={path as any} onClick={onClose}>
       <Flex
         gap={4}
         px={4}
