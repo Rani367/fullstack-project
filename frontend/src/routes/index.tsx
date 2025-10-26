@@ -41,12 +41,8 @@ function LandingPage() {
         <Flex gap={4}>
           {loggedIn ? (
             <RouterLink to="/dashboard">
-              <Button
-                rightIcon={<FiArrowRight />}
-                variant="solid"
-                size="md"
-              >
-                Go to Dashboard
+              <Button variant="solid" size="md">
+                Go to Dashboard <FiArrowRight />
               </Button>
             </RouterLink>
           ) : (
@@ -55,12 +51,8 @@ function LandingPage() {
                 <Button variant="ghost" size="md">Log In</Button>
               </RouterLink>
               <RouterLink to="/signup">
-                <Button
-                  variant="solid"
-                  size="md"
-                  rightIcon={<FiArrowRight />}
-                >
-                  Get Started
+                <Button variant="solid" size="md">
+                  Get Started <FiArrowRight />
                 </Button>
               </RouterLink>
             </>
@@ -82,12 +74,8 @@ function LandingPage() {
           {!loggedIn && (
             <Flex direction="row" gap={4} pt={4}>
               <RouterLink to="/signup">
-                <Button
-                  size="lg"
-                  variant="solid"
-                  rightIcon={<FiArrowRight />}
-                >
-                  Get Started
+                <Button size="lg" variant="solid">
+                  Get Started <FiArrowRight />
                 </Button>
               </RouterLink>
               <RouterLink to="/login">
@@ -145,12 +133,8 @@ function LandingPage() {
               </Text>
               <Flex direction="row" gap={4} pt={4}>
                 <RouterLink to="/signup">
-                  <Button
-                    size="lg"
-                    variant="solid"
-                    rightIcon={<FiArrowRight />}
-                  >
-                    Create Account
+                  <Button size="lg" variant="solid">
+                    Create Account <FiArrowRight />
                   </Button>
                 </RouterLink>
                 <RouterLink to="/login">
