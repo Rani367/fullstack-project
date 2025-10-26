@@ -4,7 +4,6 @@ import {
   Container,
   Flex,
   Heading,
-  Image,
   Link,
   Text,
   VStack,
@@ -13,7 +12,6 @@ import { createFileRoute, Link as RouterLink } from "@tanstack/react-router"
 import { FiArrowRight, FiCheck, FiZap } from "react-icons/fi"
 
 import { isLoggedIn } from "@/hooks/useAuth"
-import Logo from "/assets/images/fastapi-logo.svg"
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
@@ -37,7 +35,7 @@ function LandingPage() {
         borderBottom="1px solid"
         borderColor="border.emphasized"
       >
-        <Image src={Logo} alt="Logo" maxW="2xs" />
+        <RouterLink to="/"><Text fontSize="xl" fontWeight="bold">Platform</Text></RouterLink>
         <Flex gap={4}>
           {loggedIn ? (
             <RouterLink to="/dashboard">
