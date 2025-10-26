@@ -1,7 +1,11 @@
 import { Button, Center, Flex, Text } from "@chakra-ui/react"
 import { Link } from "@tanstack/react-router"
 
+import { isLoggedIn } from "@/hooks/useAuth"
+
 const NotFound = () => {
+  const loggedIn = isLoggedIn()
+  
   return (
     <Flex
       height="100vh"
@@ -31,7 +35,7 @@ const NotFound = () => {
         The page you are looking for was not found.
       </Text>
       <Center zIndex={1}>
-        <Link to="/">
+        <Link to={loggedIn ? "/dashboard" : "/"}>
           <Button variant="solid" colorScheme="teal" mt={4} alignSelf="center">
             Go Back
           </Button>
